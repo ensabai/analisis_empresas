@@ -2,12 +2,18 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from io import BytesIO
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
 
-COLUMNAS = ["nombre","pagina_web","ultimo_anyo","ventas_euros","n_empleados","ciudad","calle","descripcion","codigo","codigo_descripcion","etiqueta"]
+COLUMNAS = ["nombre","cif","fecha_inicio","antiguedad","pagina_web","ultimo_anyo","ventas_euros","n_empleados","provincia","ciudad","calle","descripcion","codigo","codigo_descripcion","etiqueta"]
 NOMBRES = {"nombre":"Nombre",
+           "cif":"CIF",
+           "fecha_inicio":"Fundación",
+           "antiguedad": "Antigüedad",
            "ultimo_anyo":"Último Año Registrado",
            "ventas_euros":"Ingresos por Ventas (€)",
            "n_empleados":"Número Empleados",
+           "provincia":"Provincia",
            "ciudad":"Ciudad",
            "calle":"Calle",
            "descripcion":"Descripción",
@@ -27,9 +33,11 @@ def main():
 
     empresas = pd.read_csv("empresas.csv")
 
+    empresas["antiguedad"] = empresas["fecha_inicio"].map(lambda x: relativedelta(datetime.now().date(), pd.to_datetime(x).date()).years)
+
     with st.sidebar:
         etiqueta_select = st.multiselect(
-            "Selecciona Etiqueta",
+            "Seleccione Etiqueta",
             np.unique(empresas["etiqueta"])
         )
 
@@ -43,7 +51,7 @@ def main():
         n_empleados_nulo = st.checkbox("Número de empleados nulo")
 
         codigo_select = st.multiselect(
-            "Selecciona CNAE",
+            "Seleccione CNAE",
             np.unique(empresas["codigo"])
         )
 
@@ -55,6 +63,28 @@ def main():
         )
 
         pagina_web_select = st.checkbox("Página Web Disponible")
+
+        provincia_select = st.multiselect(
+            "Seleccione Provincia",
+            np.unique(empresas["provincia"])
+        )
+
+        if len(provincia_select) > 0:
+            ciudades = np.unique(empresas["ciudad"][empresas["provincia"].isin(provincia_select)])
+        else:
+            ciudades = np.unique(empresas["ciudad"])
+
+        ciudad_select = st.multiselect(
+            "Seleccione Ciudad",
+            ciudades
+        )
+
+        antiguedad_select = st.slider(
+            "Antigüedad",
+            0,
+            empresas["antiguedad"].max(),
+            value=(0,empresas["antiguedad"].max())
+        )
     
     st.title("Datos")
 
@@ -76,9 +106,18 @@ def main():
 
     if pagina_web_select:
         empresas_aux = empresas_aux[~empresas_aux["pagina_web"].isna()]
+    
+    if len(provincia_select) > 0:
+        empresas_aux = empresas_aux[empresas_aux.provincia.isin(provincia_select)]
+    
+    if len(ciudad_select) > 0:
+        empresas_aux = empresas_aux[empresas_aux.ciudad.isin(ciudad_select)]
+    
+    empresas_aux = empresas_aux[np.logical_and(empresas["antiguedad"] >= antiguedad_select[0], empresas["antiguedad"] <= antiguedad_select[1])]
 
     st.dataframe(empresas_aux.loc[:,COLUMNAS].rename(columns = NOMBRES))
 
+    st.write(f"Nº Registros: {empresas_aux.shape[0]}")
     st.download_button(
             label="Descargar Datos",
             data=to_excel(empresas_aux),
