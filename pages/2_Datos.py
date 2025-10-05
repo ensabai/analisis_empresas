@@ -5,7 +5,7 @@ from io import BytesIO
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
-COLUMNAS = ["nombre","cif","fecha_inicio","antiguedad","pagina_web","ultimo_anyo","ventas_euros","n_empleados","provincia","ciudad","calle","descripcion","codigo","codigo_descripcion","etiqueta"]
+COLUMNAS = ["nombre","cif","fecha_inicio","antiguedad","pagina_web","ultimo_anyo","ventas_euros","n_empleados","provincia","ciudad","calle","descripcion","codigo","codigo_descripcion","telefono","etiqueta"]
 NOMBRES = {"nombre":"Nombre",
            "cif":"CIF",
            "fecha_inicio":"Fundación",
@@ -20,7 +20,8 @@ NOMBRES = {"nombre":"Nombre",
            "codigo":"CNAE",
            "codigo_descripcion":"Descripción CNAE",
            "etiqueta":"Etiqueta",
-           "pagina_web":"Página Web"}
+           "pagina_web":"Página Web",
+           "telefono":"Teléfono"}
 
 def to_excel(df):
     output = BytesIO()
